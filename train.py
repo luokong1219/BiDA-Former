@@ -10,9 +10,9 @@ import torch.distributed as dist
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from nets.segformer import SegFormer
-from nets.segformer_training import (get_lr_scheduler, set_optimizer_lr,
-                                     weights_init)
+from nets.BiDAFormer import BiDAFormer
+from nets.bidaformer_training import (get_lr_scheduler, set_optimizer_lr,
+                                      weights_init)
 from utils.callbacks import EvalCallback, LossHistory
 from utils.dataloader import SegmentationDataset, seg_dataset_collate
 from utils.utils import (download_weights, seed_everything, show_config,
@@ -31,13 +31,14 @@ if __name__ == "__main__":
     num_classes = 4
     phi = "b0"
     pretrained = Falsemodel_path = "train_result/train_EGU_CSCA_CAA.pth"
-    input_shape = [512, 512]Init_Epoch = 0
+    input_shape = [512, 512]
+    Init_Epoch = 0
     Freeze_Epoch = 50
-    Freeze_batch_size = 4  # 原8
+    Freeze_batch_size = 16
     UnFreeze_Epoch = 150 #原150轮
-    Unfreeze_batch_size = 4  #原2
+    Unfreeze_batch_size = 8
     Freeze_Train = True
-    Init_lr = 1e-4  # 原1e-4
+    Init_lr = 1e-4
     Min_lr = Init_lr * 0.01
     optimizer_type = "adamw"
     momentum = 0.9
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     eval_period = 10
 
 
-    VOCdevkit_path = 'VOCdevkit'
+    Data_path = 'OilSpillDatasets'
 
     dice_loss = True #辅助损失。之前关闭
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         else:
             download_weights(phi)
 
-    model = SegFormer(num_classes=num_classes, phi=phi, pretrained=pretrained)
+    model = BiDAFormer(num_classes=num_classes, phi=phi, pretrained=pretrained)
     print("=== Model Structure ===")
     print(model)  # 打印完整模型结构
     if not pretrained:
@@ -149,9 +150,9 @@ if __name__ == "__main__":
             model_train = model_train.cuda()
 
 
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"), "r") as f:
+    with open(os.path.join(Data_path, "VOC2007/ImageSets/Segmentation/train.txt"), "r") as f:
         train_lines = f.readlines()
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"), "r") as f:
+    with open(os.path.join(Data_path, "VOC2007/ImageSets/Segmentation/val.txt"), "r") as f:
         val_lines = f.readlines()
     num_train = len(train_lines)
     num_val = len(val_lines)
@@ -215,8 +216,8 @@ if __name__ == "__main__":
         if epoch_step == 0 or epoch_step_val == 0:
             raise ValueError("数据集过小，无法继续进行训练，请扩充数据集。")
 
-        train_dataset = SegmentationDataset(train_lines, input_shape, num_classes, True, VOCdevkit_path)
-        val_dataset = SegmentationDataset(val_lines, input_shape, num_classes, False, VOCdevkit_path)
+        train_dataset = SegmentationDataset(train_lines, input_shape, num_classes, True, Data_path)
+        val_dataset = SegmentationDataset(val_lines, input_shape, num_classes, False, Data_path)
 
         if distributed:
             train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True, )
@@ -239,7 +240,7 @@ if __name__ == "__main__":
 
 
         if local_rank == 0:
-            eval_callback = EvalCallback(model, input_shape, num_classes, val_lines, VOCdevkit_path, log_dir, Cuda, \
+            eval_callback = EvalCallback(model, input_shape, num_classes, val_lines, Data_path, log_dir, Cuda, \
                                          eval_flag=eval_flag, period=eval_period)
         else:
             eval_callback = None
@@ -256,7 +257,7 @@ if __name__ == "__main__":
                 lr_limit_min = 3e-5 if optimizer_type in ['adam', 'adamw'] else 5e-4
                 Init_lr_fit = min(max(batch_size / nbs * Init_lr, lr_limit_min), lr_limit_max)
                 Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
-               
+
                 lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, UnFreeze_Epoch)
 
                 for param in model.backbone.parameters():
