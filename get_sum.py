@@ -13,7 +13,7 @@ if __name__ == "__main__":
     num_classes = 4  # 总类别（0=背景, 1=oil, 2=others, 3=water）
     valid_class_ids = [1, 2, 3]  # 有效类别（仅oil、others、water）
     valid_class_names = ["oil", "others", "water"]  # 对应名称
-    model_path = "train_result/best_epoch_weights_11.pth"  # 模型权重
+    model_path = "train_result/best_epoch_weights.pth"  # 模型权重
     Data_path = "OilSpillDatasets"  # 数据集根目录
     output_dir = "miou_out"  # 结果目录
     metrics_file = os.path.join(output_dir, "overall_metrics.txt")  # 指标文件

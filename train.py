@@ -30,7 +30,7 @@ if __name__ == "__main__":
     fp16 = True
     num_classes = 4
     phi = "b0"
-    pretrained = Falsemodel_path = "train_result/train_EGU_CSCA_CAA.pth"
+    pretrained = Falsemodel_path = "train_result/segformer_b0_weights_voc.pth"
     input_shape = [512, 512]
     Init_Epoch = 0
     Freeze_Epoch = 50

@@ -21,27 +21,12 @@ from utils.utils_metrics import compute_mIoU, show_results
 
 
 if __name__ == "__main__":
-    #---------------------------------------------------------------------------#
-    #   miou_mode用于指定该文件运行时计算的内容
-    #   miou_mode为0代表整个miou计算流程，包括获得预测结果、计算miou。
-    #   miou_mode为1代表仅仅获得预测结果。
-    #   miou_mode为2代表仅仅计算miou。
-    #---------------------------------------------------------------------------#
+
     miou_mode       = 0
-    #------------------------------#
-    #   分类个数+1、如2+1
-    #------------------------------#
     num_classes     = 4
-    #--------------------------------------------#
-    #   区分的种类，和json_to_dataset里面的一样
-    #--------------------------------------------#
     name_classes    = ["background", "oil", "others", "water"]
-    # name_classes    = ["_background_","cat","dog"]
-    model_path = "train_result/best_epoch_weights_11.pth"  # 使用你训练好的最佳权重
-    #-------------------------------------------------------#
-    #   指向VOC数据集所在的文件夹
-    #   默认指向根目录下的VOC数据集
-    #-------------------------------------------------------#
+    model_path = "train_result/best_epoch_weights.pth"  # 使用你训练好的最佳权重
+
     Data_path  = 'OilSpillDatasets'
 
     test_txt_path = os.path.join(Data_path, "VOC2007/ImageSets/Segmentation/test.txt")
@@ -107,9 +92,7 @@ if __name__ == "__main__":
             pred_metrics["mean_acc"] = np.mean(all_acc)
         print("Prediction done.")
 
-        # ---------------------------
-        # 2. mIoU计算阶段（miou_mode=0/2）
-        # ---------------------------
+
     miou_metrics = {}  # 保存混淆矩阵推导指标
     if miou_mode == 0 or miou_mode == 2:
         print("Computing mIoU...")
@@ -220,7 +203,7 @@ if __name__ == "__main__":
     else:
         print("No metrics to save.")
 
-    # 修正：在写入文件后再绘制图表，确保IoUs数组有效
+    # 在写入文件后再绘制图表，确保IoUs数组有效
     if miou_mode == 0 or miou_mode == 2:
         if miou_metrics and "IoUs" in miou_metrics and len(miou_metrics["IoUs"]) > 0:
             # 绘制IoU柱状图（仅绘制有效类别）
