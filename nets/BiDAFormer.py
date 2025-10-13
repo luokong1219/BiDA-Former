@@ -37,11 +37,11 @@ class ConvModule(nn.Module):
         return self.act(self.conv(x))
 
 
-class EdgeGatingUnit(nn.Module):
+class EdgeGatingMoudle(nn.Module):
     """边缘门控单元，增强边界特征"""
 
     def __init__(self, in_channels):
-        super(EdgeGatingUnit, self).__init__()
+        super(EdgeGatingMoudle, self).__init__()
         self.conv_edge = nn.Conv2d(in_channels, 1, kernel_size=3, padding=1)
         self.sigmoid = nn.Sigmoid()
 
@@ -51,7 +51,7 @@ class EdgeGatingUnit(nn.Module):
 
 
 class CSCA(nn.Module):
-    """修正后的跨尺度交叉注意力模块（维度匹配版本）"""
+    """跨尺度交叉注意力模块（维度匹配版本）"""
 
     def __init__(self, in_channels):
         super(CSCA, self).__init__()
@@ -83,7 +83,7 @@ class CSCA(nn.Module):
 
 
 class LightClassAwareAttention(nn.Module):
-    """彻底简化的类别感知注意力（通道注意力，无空间矩阵计算）"""
+    """类别感知注意力（通道注意力）"""
     def __init__(self, in_channels, class_idx=1):
         super().__init__()
         self.class_idx = class_idx
@@ -146,24 +146,20 @@ class DualClassAwareAttention(nn.Module):
 
 
 class BiDAFormerHead(nn.Module):
-    """
-    SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers
-    """
-
     def __init__(self, num_classes=4, in_channels=[32, 64, 160, 256],
                  embedding_dim=768, dropout_ratio=0.1,oil_idx=1, water_idx=3):
         super(BiDAFormerHead, self).__init__()
         c1_in, c2_in, c3_in, c4_in = in_channels
 
-        # 基础特征投影（保持不变）
+        # 基础特征投影
         self.linear_c4 = MLP(input_dim=c4_in, embed_dim=embedding_dim)
         self.linear_c3 = MLP(input_dim=c3_in, embed_dim=embedding_dim)
         self.linear_c2 = MLP(input_dim=c2_in, embed_dim=embedding_dim)
         self.linear_c1 = MLP(input_dim=c1_in, embed_dim=embedding_dim)
 
-        # 边缘增强与跨尺度融合（保持不变）
-        self.egu_c4 = EdgeGatingUnit(embedding_dim)
-        self.egu_c3 = EdgeGatingUnit(embedding_dim)
+        # 边缘增强与跨尺度融合
+        self.egu_c4 = EdgeGatingMoudle(embedding_dim)
+        self.egu_c3 = EdgeGatingMoudle(embedding_dim)
         self.csca = CSCA(in_channels=embedding_dim)
 
         # 双类别感知注意力（带软融合门控）
@@ -172,7 +168,7 @@ class BiDAFormerHead(nn.Module):
         self.linear_fuse_light = ConvModule(c1=embedding_dim * 4, c2=embedding_dim, k=1)
         self.seg_logits_conv = nn.Conv2d(embedding_dim, num_classes, kernel_size=1)
 
-        # 特征融合与输出（保持不变）
+        # 特征融合与输出
         self.linear_fuse = ConvModule(c1=embedding_dim * 4, c2=embedding_dim, k=1)
         self.linear_pred = nn.Conv2d(embedding_dim, num_classes, kernel_size=1)
         self.dropout = nn.Dropout2d(dropout_ratio)
