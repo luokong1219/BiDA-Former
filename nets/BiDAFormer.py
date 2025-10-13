@@ -1,8 +1,3 @@
-# ---------------------------------------------------------------
-# Copyright (c) 2021, NVIDIA Corporation. All rights reserved.
-#
-# This work is licensed under the NVIDIA Source Code License
-# ---------------------------------------------------------------
 import math
 
 import torch
@@ -220,15 +215,13 @@ class BiDAFormer(nn.Module):
     def __init__(self, num_classes=4, phi='b0', pretrained=False,oil_idx=1, water_idx=3):
         super(BiDAFormer, self).__init__()
         self.in_channels = {
-            'b0': [32, 64, 160, 256], 'b1': [64, 128, 320, 512], 'b2': [64, 128, 320, 512],
-            'b3': [64, 128, 320, 512], 'b4': [64, 128, 320, 512], 'b5': [64, 128, 320, 512],
+            'b0': [32, 64, 160, 256],
         }[phi]
         self.backbone = {
             'b0': mit_b0,
         }[phi](pretrained)
         self.embedding_dim = {
-            'b0': 256, 'b1': 256, 'b2': 768,
-            'b3': 768, 'b4': 768, 'b5': 768,
+            'b0': 256
         }[phi]
         self.decode_head = BiDAFormerHead(
             num_classes, self.in_channels, self.embedding_dim,
